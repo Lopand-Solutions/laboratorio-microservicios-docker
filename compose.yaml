@@ -1,0 +1,54 @@
+name: mi-app
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mi_app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en el archivo .env}
+      POSTGRES_DB: mi_app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mi_app -d mi_app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - datos-db:/var/lib/postgresql/data
+    networks:
+      interna:
+        aliases: [mi-app-db]
+
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mi_app:${DB_PASSWORD}@mi-app-db:5432/mi_app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks: [interna, publica]
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mi_app:${DB_PASSWORD}@mi-app-db:5432/mi_app
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [interna]
+
+volumes:
+  datos-db:
+
+networks:
+  interna:
+    internal: true
+  publica:
