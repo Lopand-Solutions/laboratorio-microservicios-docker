@@ -1,0 +1,12 @@
+{
+  "name": "mi-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "api": "node src/api.js",
+    "worker": "node src/worker.js"
+  },
+  "dependencies": {
+    "pg": "8.23.1"
+  }
+}
